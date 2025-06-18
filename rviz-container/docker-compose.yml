@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  ros2-jazzy:
+    build: .
+    container_name: ros2-jazzy-dev
+    network_mode: host
+    privileged: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/tmp/.docker.xauth
+    volumes:
+      # X11 socket for GUI
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+      # Mount your workspace
+      - ./src:/ros2_ws/src:rw
+      # Optional: mount your packages/nodes directory
+      - ./packages:/ros2_ws/packages:rw
+    stdin_open: true
+    tty: true
+    command: bash
