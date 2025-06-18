@@ -1,0 +1,13 @@
+imu_publisher:
+  ros__parameters:
+    # Publishing rate in Hz
+    publish_rate: 30.0
+    
+    # I2C address of MPU6050 (0x68 = 104 decimal, 0x69 = 105 decimal)
+    i2c_address: 104
+    
+    # Frame ID for the IMU data
+    frame_id: "imu_link"
+    
+    # Number of samples to collect for calibration
+    calibration_samples: 100
