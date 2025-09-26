@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+#  imu_publisher:
+#    build:
+#      dockerfile: Dockerfile
+#      context: imu_ws/jazzy
+#    image: imu_pub:latest
+#    devices: 
+#      - "/dev/i2c-1:/dev/i2c-1"
+#    network_mode: host
+#    restart: unless-stopped
+#    privileged: true
+#    environment:
+#      - ROS_DOMAIN_ID=0
+#    command: >
+#      bash -c "
+#        source /opt/ros/jazzy/setup.bash &&
+#        source /ros2_ws/install/setup.bash &&
+#        ros2 launch imu_mpu6050 imu_launch.py"
+    
+  gstreamer_camera:
+    build:
+      context: jetson-gstreamer/
+      dockerfile: Dockerfile
+    image: camera-stream:latest
+    runtime: nvidia
+    network_mode: host
+    devices:
+      - "/dev/video0:/dev/video0"
+    volumes:
+      - "/tmp/argus_socket:/tmp/argus_socket"
+
+  motor_dirver:
+    build:
+      context: motor_driver/
+    image: jetson-gpio:latest
+    privileged: true
+    network_mode: host

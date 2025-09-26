@@ -1,5 +1,6 @@
 import rospy
 from std_msgs.msg import String
+from geometry_msgs.msg import Twist
 import curses
 
 print("Press 'q' to exit the loop.")
@@ -8,11 +9,28 @@ class KeyboardHandler:
     def __init__(self):
         # ROS setup
         rospy.init_node('keyboard_handler', anonymous=True)
-        self.publisher = rospy.Publisher('keyboard_input', String, queue_size=10)
+        self.publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
     def publish_key(self, key):
-        # Publish the key press event to the ROS topic
-        self.publisher.publish(key)
+        # Convert the key press event to velocity command and publish to ROS topic
+	vel_command = Twist()
+	if key == "up":
+	  vel_command.linear.x = 1.0
+	  vel_command.angular.z = 0.0
+	elif key == "down":
+	  vel_command.linear.x = -1.0
+	  vel_command.angular.z = 0.0
+	elif key == "left":
+          vel_command.linear.x = 0.0
+	  vel_command.angular.z = 1.0
+	elif key == "right":
+          vel_command.linear.x = 0.0
+	  vel_command.angular.z = -1.0
+	elif key == "end":
+	  vel_command.linear.x = 0.0
+          vel_command.angular.z = 0.0
+        
+	self.publisher.publish(vel_command)
 
     def keyboard_input(self, stdscr):
         stdscr.nodelay(True)  # Non-blocking input
@@ -23,7 +41,8 @@ class KeyboardHandler:
             curses.KEY_UP: "up",
             curses.KEY_DOWN: "down",
             curses.KEY_LEFT: "left",
-            curses.KEY_RIGHT: "right"
+            curses.KEY_RIGHT: "right",
+	    curses.KEY_END: "end"
         }
 
         while not rospy.is_shutdown():
@@ -34,7 +53,7 @@ class KeyboardHandler:
                         break
                     elif key in key_map:  # Handle arrow keys
                         self.publish_key(key_map[key])
-                        # stdscr.addstr(f"You pressed: {key_map[key]}\n")
+                        print("You pressed: {}").format(key)
                     else:
                         self.publish_key(chr(key))  # Publish other keys
                         # stdscr.addstr(f"You pressed: {chr(key)}\n")
