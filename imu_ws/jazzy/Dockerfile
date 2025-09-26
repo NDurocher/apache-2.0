@@ -61,12 +61,12 @@ set -e\n\
 source /opt/ros/jazzy/setup.bash\n\
 source /ros2_ws/install/setup.bash\n\
 \n\
-# Execute the command\n\
-exec "$@"' > /ros2_entrypoint.sh && \
-    chmod +x /ros2_entrypoint.sh
+## Execute the command\n\
+#exec "$@"' > /ros2_entrypoint.sh && \
+#    chmod +x /ros2_entrypoint.sh
 
 # Set entrypoint
-ENTRYPOINT ["/ros2_entrypoint.sh"]
+#ENTRYPOINT ["/ros2_entrypoint.sh"]
 
 # Default command
 CMD ["ros2", "launch", "imu_mpu6050", "imu_launch.py"]

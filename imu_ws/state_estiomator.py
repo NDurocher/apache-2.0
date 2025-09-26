@@ -1,4 +1,5 @@
 import rospy
+import sys
 from geometry_msgs.msg import AccelStamped, Quaternion
 from tf.transformations import quaternion_from_euler
 
@@ -77,8 +78,9 @@ class StateEstimator:
         # Log the computed values
         # rospy.loginfo("Acceleration - x: {:.2f}, y: {:.2f}, z: {:.2f}".format(accel_x, accel_y, accel_z))
         # rospy.loginfo("Velocity     - x: {:.2f}, y: {:.2f}, z: {:.2f}".format(self.velocity['x'], self.velocity['y'], self.velocity['z']))
-        rospy.loginfo("Position     - x: {:.2f}, y: {:.2f}, z: {:.2f}".format(self.position['x'], self.position['y'], self.position['z']))
-        # rospy.loginfo("Orientation  - r: {:.2f}, p: {:.2f}, y: {:.2f}".format(self.orientation['roll'], self.orientation['pitch'], self.orientation['yaw']))
+        print("\rPosition     - x: {:.2f}, y: {:.2f}, z: {:.2f}".format(self.position['x'], self.position['y'], self.position['z'])),
+	sys.stdout.flush()
+	# rospy.loginfo("Orientation  - r: {:.2f}, p: {:.2f}, y: {:.2f}".format(self.orientation['roll'], self.orientation['pitch'], self.orientation['yaw']))
 
     def moving_average(self):
         msg_out = AccelStamped()

@@ -1,6 +1,7 @@
 import rospy
 import numpy as np
-from geometry_msgs.msg import AccelStamped
+from sensor_msgs.msg import Imu
+from geometry_msgs.msg import Quaternion
 import mpu6050
 
 class IMUPublisher:
@@ -10,8 +11,8 @@ class IMUPublisher:
         self.mpu6050.set_filter_range()
 
         # Initialize ROS components
-        self.pub = rospy.Publisher('imu_accel', AccelStamped, queue_size=10)
-        rospy.init_node('Accel')
+        self.pub = rospy.Publisher('/sensor/imu', Imu, queue_size=10)
+        rospy.init_node('IMU')
 
         # Store offsets as member variables
         self.linear_offset = {"x": 0, "y": 0, "z": 0}
@@ -22,24 +23,27 @@ class IMUPublisher:
         self.calibrate_sensor()
 
     def read_sensor_data(self):
-        accel_msg = AccelStamped()
+        imu_msg = Imu()
 
-        # Read accelerometer data
-        accelerometer_data = self.mpu6050.get_accel_data()
-        accel_msg.accel.linear.x = accelerometer_data['x']
-        accel_msg.accel.linear.y = accelerometer_data['y']
-        accel_msg.accel.linear.z = accelerometer_data['z']
+ 	# Read accelerometer data
+ 	accelerometer_data = self.mpu6050.get_accel_data()
+ 	imu_msg.linear_acceleration.x = accelerometer_data['x']
+	imu_msg.linear_acceleration.y = accelerometer_data['y']
+	imu_msg.linear_acceleration.z = accelerometer_data['z']
 
-        # Read gyroscope data
-        gyroscope_data = self.mpu6050.get_gyro_data()
-        accel_msg.accel.angular.x = gyroscope_data['x']
-        accel_msg.accel.angular.y = gyroscope_data['y']
-        accel_msg.accel.angular.z = gyroscope_data['z']
+ 	# Read gyroscope data
+ 	gyroscope_data = self.mpu6050.get_gyro_data()
+	imu_msg.angular_velocity.x = gyroscope_data['x']
+	imu_msg.angular_velocity.y = gyroscope_data['y']
+  	imu_msg.angular_velocity.z = gyroscope_data['z']
 
-        # Read temperature (not used directly here)
-        temperature = self.mpu6050.get_temp()
+	# Orientation (unknown -> leave at 0,0,0,1 quaternion)
+	imu_msg.orientation = Quaternion(0.0, 0.0, 0.0, 1.0)
 
-        return accel_msg, temperature
+	# Read temperature (not used directly here)
+	temperature = self.mpu6050.get_temp()
+
+    	return imu_msg, temperature
 
     def calibrate_sensor(self):
         linear_calibration_buffer = []
@@ -47,16 +51,16 @@ class IMUPublisher:
 
         # Collect 100 samples for calibration
         while len(linear_calibration_buffer) < 100:
-            accel_msg, _ = self.read_sensor_data()
+            imu_msg, _ = self.read_sensor_data()
             linear_calibration_buffer.append({
-                "x": accel_msg.accel.linear.x,
-                "y": accel_msg.accel.linear.y,
-                "z": accel_msg.accel.linear.z
+                "x": imu_msg.linear_acceleration.x,
+                "y": imu_msg.linear_acceleration.y,
+                "z": imu_msg.linear_acceleration.z
             })
             angular_calibration_buffer.append({
-                "x": accel_msg.accel.angular.x,
-                "y": accel_msg.accel.angular.y,
-                "z": accel_msg.accel.angular.z
+                "x": imu_msg.angular_velocity.x,
+                "y": imu_msg.angular_velocity.y,
+                "z": imu_msg.angular_velocity.z
             })
             self.rate.sleep()
 
@@ -73,20 +77,20 @@ class IMUPublisher:
     def publish_data(self):
         while not rospy.is_shutdown():
             # Read sensor data
-            accel_msg, _ = self.read_sensor_data()
+            imu_msg, _ = self.read_sensor_data()
 
             # Apply linear offset correction
-            accel_msg.accel.linear.x -= self.linear_offset["x"]
-            accel_msg.accel.linear.y -= self.linear_offset["y"]
-            accel_msg.accel.linear.z -= self.linear_offset["z"]
+            imu_msg.linear_acceleration.x -= self.linear_offset["x"]
+            imu_msg.linear_acceleration.y -= self.linear_offset["y"]
+            imu_msg.linear_acceleration.z -= self.linear_offset["z"]
 
             # Apply angular offset correction
-            accel_msg.accel.angular.x -= self.angular_offset["x"]
-            accel_msg.accel.angular.y -= self.angular_offset["y"]
-            accel_msg.accel.angular.z -= self.angular_offset["z"]
+            imu_msg.angular_velocity.x -= self.angular_offset["x"]
+            imu_msg.angular_velocity.y -= self.angular_offset["y"]
+            imu_msg.angular_velocity.z -= self.angular_offset["z"]
 
             # Publish the corrected message
-            self.pub.publish(accel_msg)
+            self.pub.publish(imu_msg)
 
             # Sleep to maintain the desired rate
             self.rate.sleep()
