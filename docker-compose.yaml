@@ -1,24 +1,36 @@
 version: "3.9"
 services:
-#  imu_publisher:
-#    build:
-#      dockerfile: Dockerfile
-#      context: imu_ws/jazzy
-#    image: imu_pub:latest
-#    devices: 
-#      - "/dev/i2c-1:/dev/i2c-1"
-#    network_mode: host
-#    restart: unless-stopped
-#    privileged: true
-#    environment:
-#      - ROS_DOMAIN_ID=0
-#    command: >
-#      bash -c "
-#        source /opt/ros/jazzy/setup.bash &&
-#        source /ros2_ws/install/setup.bash &&
-#        ros2 launch imu_mpu6050 imu_launch.py"
-    
+
+  imu:
+    profiles: [sensor]
+    build:
+      context: imu_ws/
+      dockerfile: Imu.Dockerfile
+    image: imu:latest
+    privileged: true
+    network_mode: host
+  
+  imu_publisher:
+    profiles: [state]
+    build:
+      dockerfile: Dockerfile
+      context: imu_ws/jazzy
+    image: imu_pub:latest
+    devices: 
+      - "/dev/i2c-1:/dev/i2c-1"
+    network_mode: host
+    restart: unless-stopped
+    privileged: true
+    environment:
+      - ROS_DOMAIN_ID=0
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        source /ros2_ws/install/setup.bash &&
+        ros2 launch imu_mpu6050 imu_launch.py"    
+  
   gstreamer_camera:
+    profiles: [vision]
     build:
       context: jetson-gstreamer/
       dockerfile: Dockerfile
@@ -30,9 +42,22 @@ services:
     volumes:
       - "/tmp/argus_socket:/tmp/argus_socket"
 
-  motor_dirver:
+  motor_driver:
+    profiles: [motor_drive]
     build:
       context: motor_driver/
+      dockerfile: MotorDriver.Dockerfile
     image: jetson-gpio:latest
     privileged: true
     network_mode: host
+
+  gamepad_teleop:
+    profiles: [motor_drive]
+    build:
+      context: motor_driver/
+      dockerfile: Gamepad.Dockerfile
+    image: gamepad:latest
+    privileged: true
+    network_mode: host
+    volumes:
+      - /dev:/dev
