@@ -65,6 +65,7 @@ class GPIOController:
         right_cmd = np.clip(msg.linear.x - msg.angular.z/2, -1,1)
         self.update_motor(left_cmd, left_motor_channels)
         self.update_motor(right_cmd, right_motor_channels)
+        print(left_cmd, right_cmd)
 
     def update_motor(self, cmd, motor_channels):
         if cmd > 0.0:
