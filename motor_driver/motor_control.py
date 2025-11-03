@@ -9,27 +9,17 @@ GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 
 right_motor_channels = [38, 40]  # in1, in2
-left_motor_channels = [19, 21]  # in3, in4
+left_motor_channels = [21, 19]  # in3, in4
 
 GPIO.setup(right_motor_channels, GPIO.OUT)
 GPIO.setup(left_motor_channels, GPIO.OUT)
+
+rospy.loginfo("GPIO Setup complete")
 
 class GPIOController:
     def __init__(self):
         rospy.init_node('gpio_controller', anonymous=True)
         rospy.Subscriber('/cmd_vel', Twist, self.handle_twist_msg)
-
-        # GPIO setup
-        #GPIO.setmode(GPIO.BOARD)
-        #GPIO.setwarnings(False)
-
-        #right_motor_channels = [38, 40]  # in1, in2
-        #left_motor_channels = [19, 21]  # in3, in4
-
-        #GPIO.setup(self.right_motor_channels, GPIO.OUT)
-        #GPIO.setup(self.left_motor_channels, GPIO.OUT)
-
-        rospy.loginfo("GPIO setup")
 
     def update_GPIO(self, msg):
         if msg.angular.z == 0:
@@ -62,7 +52,7 @@ class GPIOController:
 
     def handle_twist_msg(self, msg):
         left_cmd = np.clip(msg.linear.x + msg.angular.z/2, -1, 1)
-        right_cmd = np.clip(msg.linear.x - msg.angular.z/2, -1,1)
+        right_cmd = np.clip(msg.linear.x - msg.angular.z/2, -1, 1)
         self.update_motor(left_cmd, left_motor_channels)
         self.update_motor(right_cmd, right_motor_channels)
         print(left_cmd, right_cmd)

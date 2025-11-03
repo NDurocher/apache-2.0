@@ -64,12 +64,12 @@ class GamepadTeleop:
             
             # Left stick Y-axis for forward/backward (inverted because down is positive)
             if self.joystick.get_numaxes() >= 2:
-                left_y = -self.joystick.get_axis(2)
+                left_y = -self.joystick.get_axis(1)
                 twist.linear.x = self.apply_deadzone(left_y) * self.max_linear_speed
             
             # Right stick X-axis for turning
             if self.joystick.get_numaxes() >= 3:
-                right_x = self.joystick.get_axis(1)
+                right_x = self.joystick.get_axis(2)
                 twist.angular.z = self.apply_deadzone(right_x) * self.max_angular_speed
             
             # Check for quit button (button 0, usually A on Xbox or X on PlayStation)
