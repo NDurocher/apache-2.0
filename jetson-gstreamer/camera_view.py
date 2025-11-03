@@ -8,7 +8,7 @@ from cv_bridge import CvBridge
 import sys
 
 class CameraViewer:
-    def __init__(self, image_topic="/camera/image_raw"):
+    def __init__(self, image_topic="/cam0/image_raw"):
         self.bridge = CvBridge()
         self.image_topic = image_topic
         
@@ -74,7 +74,7 @@ class CameraViewer:
 
 def main():
     # Default topic, but allow command line argument
-    image_topic = "/camera/image_raw"
+    image_topic = "/cam0/image_raw"
     if len(sys.argv) > 1:
         image_topic = sys.argv[1]
     

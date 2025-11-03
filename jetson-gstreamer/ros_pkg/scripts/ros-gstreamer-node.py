@@ -63,7 +63,7 @@ class GstreamerCamera:
 
 def main():
     rospy.init_node('gstreamer_camera_publisher')
-    pub = rospy.Publisher('camera/image_raw', Image, queue_size=10)
+    pub = rospy.Publisher('cam0/image_raw', Image, queue_size=10)
     bridge = CvBridge()
     camera = GstreamerCamera()
     camera.start()
