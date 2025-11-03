@@ -1,8 +1,18 @@
 import rospy
+import math
 import numpy as np
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion
 import mpu6050
+
+def euler_to_quaternion(yaw, pitch, roll):
+
+        qx = np.sin(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) - np.cos(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
+        qy = np.cos(roll/2) * np.sin(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.cos(pitch/2) * np.sin(yaw/2)
+        qz = np.cos(roll/2) * np.cos(pitch/2) * np.sin(yaw/2) - np.sin(roll/2) * np.sin(pitch/2) * np.cos(yaw/2)
+        qw = np.cos(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
+
+        return [qx, qy, qz, qw]
 
 class IMUPublisher:
     def __init__(self):
@@ -21,6 +31,7 @@ class IMUPublisher:
 
         # Perform calibration
         self.calibrate_sensor()
+	rospy.loginfo("sensor calibrated")
 
     def read_sensor_data(self):
         imu_msg = Imu()
@@ -37,13 +48,18 @@ class IMUPublisher:
 	imu_msg.angular_velocity.y = gyroscope_data['y']
   	imu_msg.angular_velocity.z = gyroscope_data['z']
 
-	# Orientation (unknown -> leave at 0,0,0,1 quaternion)
-	imu_msg.orientation = Quaternion(0.0, 0.0, 0.0, 1.0)
+	# Orientation
+	phi = math.atan(accelerometer_data['y'] / (math.sqrt(pow(accelerometer_data['x'],2) + pow(accelerometer_data['z'],2))))
+        theta = math.atan(accelerometer_data['x'] / (math.sqrt(pow(accelerometer_data['y'],2) + pow(accelerometer_data['z'],2))))
+        psi = math.atan(math.sqrt(pow(accelerometer_data['x'],2) + pow(accelerometer_data['y'],2)) / accelerometer_data['z'])
 
-	# Read temperature (not used directly here)
-	temperature = self.mpu6050.get_temp()
 
-    	return imu_msg, temperature
+	rospy.loginfo(psi)
+
+        quaternion = euler_to_quaternion(phi, theta, psi)
+	imu_msg.orientation = Quaternion(quaternion[0], quaternion[1], quaternion[2], quaternion[3])
+
+	return imu_msg
 
     def calibrate_sensor(self):
         linear_calibration_buffer = []
@@ -51,7 +67,7 @@ class IMUPublisher:
 
         # Collect 100 samples for calibration
         while len(linear_calibration_buffer) < 100:
-            imu_msg, _ = self.read_sensor_data()
+            imu_msg= self.read_sensor_data()
             linear_calibration_buffer.append({
                 "x": imu_msg.linear_acceleration.x,
                 "y": imu_msg.linear_acceleration.y,
@@ -77,7 +93,7 @@ class IMUPublisher:
     def publish_data(self):
         while not rospy.is_shutdown():
             # Read sensor data
-            imu_msg, _ = self.read_sensor_data()
+            imu_msg = self.read_sensor_data()
 
             # Apply linear offset correction
             imu_msg.linear_acceleration.x -= self.linear_offset["x"]
@@ -98,6 +114,7 @@ class IMUPublisher:
 if __name__ == '__main__':
     try:
         imu_publisher = IMUPublisher()
+	rospy.loginfo("Running")
         imu_publisher.publish_data()
     except rospy.ROSInterruptException:
         pass
