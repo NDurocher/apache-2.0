@@ -61,8 +61,12 @@ class DiffDriveEKF(object):
         # TF broadcaster
         self.br = tf.TransformBroadcaster() if self.publish_tf else None
 
-        rospy.loginfo("DiffDriveEKF initialized: wheel_odom=%s imu=%s cmd_vel=%s",
-                      self.topic_odom, self.topic_imu, self.topic_cmd)
+        rospy.loginfo(
+            "DiffDriveEKF initialized: wheel_odom=%s imu=%s cmd_vel=%s",
+            self.topic_odom,
+            self.topic_imu,
+            self.topic_cmd,
+        )
 
     # --------- Callbacks ----------
     def cb_cmd_vel(self, msg):
@@ -82,7 +86,7 @@ class DiffDriveEKF(object):
         py = msg.pose.pose.position.y
         q = msg.pose.pose.orientation
         siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
-        cosy_cosp = 1.0 - 2.0 * (q.y*q.y + q.z*q.z)
+        cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
         yaw = math.atan2(siny_cosp, cosy_cosp)
         z = np.array([[px], [py], [yaw]])
         self.update_odom(z)
@@ -98,7 +102,11 @@ class DiffDriveEKF(object):
 
     # --------- EKF Core ----------
     def _predict_to_time(self, stamp):
-        t = stamp.to_sec() if stamp and stamp.to_sec() > 0 else rospy.Time.now().to_sec()
+        t = (
+            stamp.to_sec()
+            if stamp and stamp.to_sec() > 0
+            else rospy.Time.now().to_sec()
+        )
         if self.last_time is None:
             self.last_time = t
             return
@@ -116,11 +124,13 @@ class DiffDriveEKF(object):
         self.x[2, 0] = normalize_angle(self.x[2, 0] + w * dt)
 
         # Jacobian
-        F = np.array([
-            [1.0, 0.0, -v*dt*math.sin(th)],
-            [0.0, 1.0,  v*dt*math.cos(th)],
-            [0.0, 0.0,  1.0]
-        ])
+        F = np.array(
+            [
+                [1.0, 0.0, -v * dt * math.sin(th)],
+                [0.0, 1.0, v * dt * math.cos(th)],
+                [0.0, 0.0, 1.0],
+            ]
+        )
 
         Qd = self.Q.copy()
         Qd[0, 0] += abs(v) * dt + 1e-9
@@ -161,7 +171,7 @@ class DiffDriveEKF(object):
         if (q.w, q.x, q.y, q.z) == (0.0, 0.0, 0.0, 0.0):
             return None
         siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
-        cosy_cosp = 1.0 - 2.0 * (q.y*q.y + q.z*q.z)
+        cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
         return math.atan2(siny_cosp, cosy_cosp)
 
     def publish_odom(self, stamp=None):
@@ -195,7 +205,7 @@ class DiffDriveEKF(object):
                 (q[0], q[1], q[2], q[3]),
                 msg.header.stamp,
                 self.child_frame_id,
-                self.frame_id
+                self.frame_id,
             )
 
 

@@ -1,1 +1,0 @@
-# IMU MPU6050 ROS2 Package
