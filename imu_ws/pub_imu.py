@@ -42,8 +42,6 @@ class IMUPublisher:
         self.pub_frequency = 30.0  # Hz
         self.rate = rospy.Rate(self.pub_frequency)
 
-        self.alpha = 1.0  # complementary filter gain
-
         # Perform calibration
         self.calibrate_sensor()
         rospy.loginfo("sensor calibrated")
@@ -90,7 +88,7 @@ class IMUPublisher:
         angular_calibration_buffer = []
 
         # Collect 100 samples for calibration
-        while len(linear_calibration_buffer) < 100:
+        while len(linear_calibration_buffer) < 500:
             accelerometer_data = self.mpu6050.get_accel_data()
             linear_calibration_buffer.append(
                 {
@@ -170,9 +168,7 @@ class IMUPublisher:
                     imu_msg.angular_velocity.z,
                 ]
             )
-            self.eulers = self.alpha * (
-                self.eulers + ang_vels * 1 / self.pub_frequency
-            ) + (1 - self.alpha) * np.array([phi, theta, psi])
+            self.eulers = self.eulers + ang_vels * 1 / self.pub_frequency
 
             quaternion = euler_to_quaternion(self.eulers)
             imu_msg.orientation = Quaternion(
