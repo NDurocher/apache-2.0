@@ -33,7 +33,7 @@ class IMUPublisher:
 	self.pub_frequency = 30.0 # Hz
         self.rate = rospy.Rate(self.pub_frequency)
 
-	self.alpha = 0.987 # complementary filter gain
+	self.alpha = 1.0  # complementary filter gain
 
         # Perform calibration
         self.calibrate_sensor()
@@ -49,6 +49,12 @@ class IMUPublisher:
  	imu_msg.linear_acceleration.x = accelerometer_data['x'] - self.linear_offset["x"]
 	imu_msg.linear_acceleration.y = accelerometer_data['y'] - self.linear_offset["y"]
 	imu_msg.linear_acceleration.z = accelerometer_data['z'] - self.linear_offset["z"]
+
+	# Convert to m/s^2
+	imu_msg.linear_acceleration.x *= 9.81
+	imu_msg.linear_acceleration.y *= 9.81
+	imu_msg.linear_acceleration.z *= 9.81
+
 
  	# Read gyroscope data and apply angular offset correction
  	gyroscope_data = self.mpu6050.get_gyro_data()
@@ -69,16 +75,18 @@ class IMUPublisher:
 
         # Collect 100 samples for calibration
         while len(linear_calibration_buffer) < 100:
-            imu_msg= self.read_sensor_data()
+            #imu_msg = self.read_sensor_data()
+            accelerometer_data = self.mpu6050.get_accel_data()
             linear_calibration_buffer.append({
-                "x": imu_msg.linear_acceleration.x,
-                "y": imu_msg.linear_acceleration.y,
-                "z": imu_msg.linear_acceleration.z
+                "x": accelerometer_data['x'],
+                "y": accelerometer_data['y'],
+                "z": accelerometer_data['z']
             })
+	    gyroscope_data = self.mpu6050.get_gyro_data()
             angular_calibration_buffer.append({
-                "x": imu_msg.angular_velocity.x,
-                "y": imu_msg.angular_velocity.y,
-                "z": imu_msg.angular_velocity.z
+                "x": gyroscope_data['x'],
+                "y": gyroscope_data['y'],
+                "z": gyroscope_data['z']
             })
             self.rate.sleep()
 
@@ -105,15 +113,14 @@ class IMUPublisher:
 	    ang_vels = np.array([imu_msg.angular_velocity.x, imu_msg.angular_velocity.y, imu_msg.angular_velocity.z])
 
 	    self.eulers = self.alpha * (self.eulers + ang_vels * 1/self.pub_frequency) + (1 - self.alpha) * np.array([phi, theta, psi])
-#	    self.eulers += ang_vels * 1/self.pub_frequency
+	    #self.eulers += ang_vels * 1/self.pub_frequency
 
             quaternion = euler_to_quaternion(self.eulers)
             imu_msg.orientation = Quaternion(quaternion[0], quaternion[1], quaternion[2], quaternion[3])
 
             # Publish the corrected message
             self.pub.publish(imu_msg)
-	    rospy.loginfo(theta)
-
+	    rospy.loginfo(self.eulers[2])
             # Sleep to maintain the desired rate
             self.rate.sleep()
 

@@ -114,7 +114,6 @@ class DiffDriveEKF(object):
         self.x[0, 0] += v * dt * math.cos(th)
         self.x[1, 0] += v * dt * math.sin(th)
         self.x[2, 0] = normalize_angle(self.x[2, 0] + w * dt)
-        rospy.loginfo(self.x[2,0])
 
         # Jacobian
         F = np.array([

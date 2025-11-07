@@ -37,6 +37,7 @@ services:
     image: camera-stream:latest
     runtime: nvidia
     network_mode: host
+    restart: unless-stopped
     devices:
       - "/dev/video0:/dev/video0"
     volumes:
@@ -50,6 +51,7 @@ services:
     image: jetson-gpio:latest
     privileged: true
     network_mode: host
+    restart: unless-stopped
 
   gamepad_teleop:
     profiles: [motor_drive]
@@ -59,5 +61,6 @@ services:
     image: gamepad:latest
     privileged: true
     network_mode: host
+    restart: unless-stopped
     volumes:
       - /dev:/dev
