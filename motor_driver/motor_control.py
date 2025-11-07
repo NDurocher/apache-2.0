@@ -16,57 +16,59 @@ GPIO.setup(left_motor_channels, GPIO.OUT)
 
 rospy.loginfo("GPIO Setup complete")
 
+
 class GPIOController:
     def __init__(self):
-        rospy.init_node('gpio_controller', anonymous=True)
-        rospy.Subscriber('/cmd_vel', Twist, self.handle_twist_msg)
+        rospy.init_node("gpio_controller", anonymous=True)
+        rospy.Subscriber("/cmd_vel", Twist, self.handle_twist_msg)
 
     def update_GPIO(self, msg):
         if msg.angular.z == 0:
-          if msg.linear.x == 1:
-              GPIO.output(40, GPIO.LOW)
-              GPIO.output(19, GPIO.HIGH)
-              GPIO.output(38, GPIO.HIGH)
-              GPIO.output(21, GPIO.LOW)
-          elif msg.linear.x == -1:
-              GPIO.output(40, GPIO.HIGH)
-              GPIO.output(19, GPIO.LOW)
-              GPIO.output(38, GPIO.LOW)
-              GPIO.output(21, GPIO.HIGH)
-          elif msg.linear.x == 0:
-              GPIO.output(40, GPIO.LOW)
-              GPIO.output(19, GPIO.LOW)
-              GPIO.output(38, GPIO.LOW)
-              GPIO.output(21, GPIO.LOW)
+            if msg.linear.x == 1:
+                GPIO.output(40, GPIO.LOW)
+                GPIO.output(19, GPIO.HIGH)
+                GPIO.output(38, GPIO.HIGH)
+                GPIO.output(21, GPIO.LOW)
+            elif msg.linear.x == -1:
+                GPIO.output(40, GPIO.HIGH)
+                GPIO.output(19, GPIO.LOW)
+                GPIO.output(38, GPIO.LOW)
+                GPIO.output(21, GPIO.HIGH)
+            elif msg.linear.x == 0:
+                GPIO.output(40, GPIO.LOW)
+                GPIO.output(19, GPIO.LOW)
+                GPIO.output(38, GPIO.LOW)
+                GPIO.output(21, GPIO.LOW)
         else:
-          if msg.angular.z > 0:
-            GPIO.output(40, GPIO.LOW)
-            GPIO.output(19, GPIO.LOW)
-            GPIO.output(38, GPIO.HIGH)
-            GPIO.output(21, GPIO.HIGH)
-          elif msg.angular.z < 0:
-            GPIO.output(40, GPIO.HIGH)
-            GPIO.output(19, GPIO.HIGH)
-            GPIO.output(38, GPIO.LOW)
-            GPIO.output(21, GPIO.LOW)
+            if msg.angular.z > 0:
+                GPIO.output(40, GPIO.LOW)
+                GPIO.output(19, GPIO.LOW)
+                GPIO.output(38, GPIO.HIGH)
+                GPIO.output(21, GPIO.HIGH)
+            elif msg.angular.z < 0:
+                GPIO.output(40, GPIO.HIGH)
+                GPIO.output(19, GPIO.HIGH)
+                GPIO.output(38, GPIO.LOW)
+                GPIO.output(21, GPIO.LOW)
 
     def handle_twist_msg(self, msg):
-        left_cmd = np.clip(msg.linear.x + msg.angular.z/2, -1, 1)
-        right_cmd = np.clip(msg.linear.x - msg.angular.z/2, -1, 1)
+        left_cmd = np.clip(msg.linear.x + msg.angular.z / 2, -1, 1)
+        right_cmd = np.clip(msg.linear.x - msg.angular.z / 2, -1, 1)
         self.update_motor(left_cmd, left_motor_channels)
         self.update_motor(right_cmd, right_motor_channels)
         print(left_cmd, right_cmd)
 
     def update_motor(self, cmd, motor_channels):
         if cmd > 0.0:
-          GPIO.output(motor_channels[0], GPIO.HIGH)
-          GPIO.output(motor_channels[1], GPIO.LOW)
+            GPIO.output(motor_channels[0], GPIO.HIGH)
+            GPIO.output(motor_channels[1], GPIO.LOW)
         elif cmd < 0.0:
-          GPIO.output(motor_channels[0], GPIO.LOW)
-          GPIO.output(motor_channels[1], GPIO.HIGH)
+            GPIO.output(motor_channels[0], GPIO.LOW)
+            GPIO.output(motor_channels[1], GPIO.HIGH)
         else:
-          GPIO.output(motor_channels[0], GPIO.LOW)
-          GPIO.output(motor_channels[1], GPIO.LOW)
+            GPIO.output(motor_channels[0], GPIO.LOW)
+            GPIO.output(motor_channels[1], GPIO.LOW)
+
 
 if __name__ == "__main__":
     gpio_controller = GPIOController()
