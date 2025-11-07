@@ -42,6 +42,12 @@ class IMUPublisher:
         self.pub_frequency = 30.0  # Hz
         self.rate = rospy.Rate(self.pub_frequency)
 
+        # High-pass filter for accelerometer
+        self.cutoff_freq = 15  # Hz
+        self.alpha_hp = self.calculate_hp_alpha(self.cutoff_freq, self.pub_frequency)
+        self.prev_accel_raw = {"x": 0, "y": 0, "z": 0}
+        self.prev_accel_filtered = {"x": 0, "y": 0, "z": 0}
+
         # Perform calibration
         self.calibrate_sensor()
         rospy.loginfo("sensor calibrated")
@@ -50,25 +56,57 @@ class IMUPublisher:
             3,
         )
 
+    def calculate_hp_alpha(self, cutoff_freq, sample_rate):
+        """Calculate alpha for first-order high-pass filter"""
+        rc = 1.0 / (2.0 * np.pi * cutoff_freq)
+        dt = 1.0 / sample_rate
+        return rc / (rc + dt)
+
+    def high_pass_filter(self, current, prev_raw, prev_filtered, alpha):
+        """Apply first-order high-pass filter"""
+        return alpha * (prev_filtered + current - prev_raw)
+
     def read_sensor_data(self):
         imu_msg = Imu()
 
         # Read accelerometer data and apply linear offset correction
         accelerometer_data = self.mpu6050.get_accel_data()
-        imu_msg.linear_acceleration.x = (
-            accelerometer_data["x"] - self.linear_offset["x"]
-        )
-        imu_msg.linear_acceleration.y = (
-            accelerometer_data["y"] - self.linear_offset["y"]
-        )
-        imu_msg.linear_acceleration.z = (
-            accelerometer_data["z"] - self.linear_offset["z"]
-        )
+        accel_raw = {
+            "x": accelerometer_data["x"] - self.linear_offset["x"],
+            "y": accelerometer_data["y"] - self.linear_offset["y"],
+            "z": accelerometer_data["z"] - self.linear_offset["z"],
+        }
 
-        # Convert to m/s^2
-        imu_msg.linear_acceleration.x *= 9.81
-        imu_msg.linear_acceleration.y *= 9.81
-        imu_msg.linear_acceleration.z *= 9.81
+        # Apply high-pass filter to remove gravity component
+        accel_filtered = {
+            "x": self.high_pass_filter(
+                accel_raw["x"],
+                self.prev_accel_raw["x"],
+                self.prev_accel_filtered["x"],
+                self.alpha_hp,
+            ),
+            "y": self.high_pass_filter(
+                accel_raw["y"],
+                self.prev_accel_raw["y"],
+                self.prev_accel_filtered["y"],
+                self.alpha_hp,
+            ),
+            "z": self.high_pass_filter(
+                accel_raw["z"],
+                self.prev_accel_raw["z"],
+                self.prev_accel_filtered["z"],
+                self.alpha_hp,
+            ),
+        }
+
+        # Update previous values for next iteration
+        self.prev_accel_raw = accel_raw.copy()
+        self.prev_accel_filtered = accel_filtered.copy()
+
+        # Convert to m/s^2 and assign to message
+        imu_msg.linear_acceleration.x = accel_filtered["x"] * 9.81
+        imu_msg.linear_acceleration.y = accel_filtered["y"] * 9.81
+        imu_msg.linear_acceleration.z = accel_filtered["z"] * 9.81
 
         # Read gyroscope data and apply angular offset correction
         gyroscope_data = self.mpu6050.get_gyro_data()
@@ -88,7 +126,7 @@ class IMUPublisher:
         angular_calibration_buffer = []
 
         # Collect 100 samples for calibration
-        while len(linear_calibration_buffer) < 500:
+        while len(linear_calibration_buffer) < 100:
             accelerometer_data = self.mpu6050.get_accel_data()
             linear_calibration_buffer.append(
                 {
@@ -134,33 +172,6 @@ class IMUPublisher:
             # Read sensor data
             imu_msg = self.read_sensor_data()
 
-            # Orientation
-            phi = math.atan(
-                imu_msg.linear_acceleration.y
-                / (
-                    math.sqrt(
-                        pow(imu_msg.linear_acceleration.x, 2)
-                        + pow(imu_msg.linear_acceleration.z, 2)
-                    )
-                )
-            )
-            theta = math.atan(
-                imu_msg.linear_acceleration.x
-                / (
-                    math.sqrt(
-                        pow(imu_msg.linear_acceleration.y, 2)
-                        + pow(imu_msg.linear_acceleration.z, 2)
-                    )
-                )
-            )
-            psi = math.atan(
-                math.sqrt(
-                    pow(imu_msg.linear_acceleration.x, 2)
-                    + pow(imu_msg.linear_acceleration.y, 2)
-                )
-                / imu_msg.linear_acceleration.z
-            )
-
             ang_vels = np.array(
                 [
                     imu_msg.angular_velocity.x,
@@ -177,7 +188,7 @@ class IMUPublisher:
 
             # Publish the corrected message
             self.pub.publish(imu_msg)
-            rospy.loginfo(self.eulers[2])
+            # rospy.loginfo(self.eulers[2])
             # Sleep to maintain the desired rate
             self.rate.sleep()
 
