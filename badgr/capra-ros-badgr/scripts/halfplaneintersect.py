@@ -32,11 +32,13 @@ from numpy.linalg import det
 
 class InfeasibleError(RuntimeError):
     """Raised if an LP problem has no solution."""
+
     pass
 
 
 class Line(object):
     """A line in space."""
+
     def __init__(self, point, direction):
         super(Line, self).__init__()
         self.point = array(point)
@@ -66,13 +68,14 @@ def halfplane_optimize(lines, optimal_point):
         prev_lines = itertools.islice(lines, i)
         left_dist, right_dist = line_halfplane_intersect(line, prev_lines)
         if (left_dist == -1) & (right_dist == -1):
-            point = [0,0]
+            point = [0, 0]
             return point
 
         # Now project the optimal point onto the line segment defined by the
         # the above bounds. This gives us our new best point.
         point = point_line_project(line, optimal_point, left_dist, right_dist)
     return point
+
 
 def point_line_project(line, point, left_bound, right_bound):
     """Project point onto the line segment defined by line, which is in
@@ -86,6 +89,7 @@ def point_line_project(line, point, left_bound, right_bound):
     clamped_len = clip(proj_len, left_bound, right_bound)
     # print("clamped_len=%s" % clamped_len)
     return line.point + new_dir * clamped_len
+
 
 def line_halfplane_intersect(line, other_lines):
     """Compute the signed offsets of the interval on the edge of the
@@ -144,25 +148,27 @@ def line_halfplane_intersect(line, other_lines):
             raise InfeasibleError
     return left_dist, right_dist
 
+
 def perp(a):
     return array((a[1], -a[0]))
+
 
 def norm_sq(x):
     return dot(x, x)
 
+
 def norm(x):
     return sqrt(norm_sq(x))
+
 
 def normalized(x):
     l = norm_sq(x)
     assert l > 0, (x, l)
     return x / sqrt(l)
 
-if __name__ == '__main__':
-    lines = [
-        Line((-2, 0), (-1, 1)),
-        Line((0, -1), (1, 0))
-    ]
+
+if __name__ == "__main__":
+    lines = [Line((-2, 0), (-1, 1)), Line((0, -1), (1, 0))]
     point = array((1, 0))
     result = halfplane_optimize(lines, point)
     print(result, norm(result))

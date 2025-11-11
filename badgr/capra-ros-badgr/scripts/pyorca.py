@@ -36,16 +36,20 @@ from halfplaneintersect import halfplane_optimize, Line, perp
 # For each such velocity 'u' and normal 'n', find half-plane as defined in (6).
 # Intersect half-planes and pick velocity closest to A's preferred velocity.
 
+
 def norm_sq(x):
     return dot(x, x)
+
 
 def normalized(x):
     l = norm_sq(x)
     assert l > 0, (x, l)
     return x / sqrt(l)
 
+
 def dist_sq(a, b):
     return norm_sq(b - a)
+
 
 def location2array(location):
     ls = [location.x, location.y]
@@ -54,13 +58,14 @@ def location2array(location):
 
 class ORCAAgent(object):
     """A disk-shaped agent."""
+
     def __init__(self, carla_agent, goal, radius=0.35, max_speed=1.4):
-        ''' Pref_velocity is the max_speed scaled in the direction of the goal '''
+        """Pref_velocity is the max_speed scaled in the direction of the goal"""
         super(ORCAAgent, self).__init__()
         self.carla_agent = carla_agent
         self.goal = location2array(goal)
         self.radius = radius
-        self.max_speed = max_speed 
+        self.max_speed = max_speed
         self.update()
 
     def getVelocity(self):
@@ -70,13 +75,13 @@ class ORCAAgent(object):
         self.position = location2array(self.carla_agent.get_location())
 
     def getPrefVelocity(self):
-        heading = self.goal-self.position
+        heading = self.goal - self.position
         mag = numpy.linalg.norm(heading)
         if mag == 0:
             mag = 1e-10
-        dir = heading/mag
+        dir = heading / mag
 
-        self.pref_velocity = dir*self.max_speed
+        self.pref_velocity = dir * self.max_speed
 
     def update(self):
         self.getVelocity()
@@ -84,7 +89,7 @@ class ORCAAgent(object):
         self.getPrefVelocity()
 
     def check_goal(self):
-        d2g = numpy.linalg.norm(self.goal-self.position)
+        d2g = numpy.linalg.norm(self.goal - self.position)
         if d2g < 2:
             return True
         return False
@@ -100,6 +105,7 @@ def orca(agent, colliding_agents, t, dt):
         line = Line(agent.velocity + dv / 2, n)
         lines.append(line)
     return halfplane_optimize(lines, agent.pref_velocity), lines
+
 
 def get_avoidance_velocity(agent, collider, t, dt):
     """Get the smallest relative change in velocity between agent and collider
@@ -153,25 +159,23 @@ def get_avoidance_velocity(agent, collider, t, dt):
         # much closer can be worked out by similar triangles. It works out
         # that the new point is at x/t cos(theta)^2, where theta is the angle
         # of the aperture (so sin^2(theta) = (r/||x||)^2).
-        adjusted_center = x/t * (1 - (r*r)/x_len_sq)
+        adjusted_center = x / t * (1 - (r * r) / x_len_sq)
 
         if dot(v - adjusted_center, adjusted_center) < 0:
             # v lies in the front part of the cone
             # print("front")
             # print("front", adjusted_center, x_len_sq, r, x, t)
-            w = v - x/t
-            u = normalized(w) * r/t - w
+            w = v - x / t
+            u = normalized(w) * r / t - w
             n = normalized(w)
-        else: # v lies in the rest of the cone
+        else:  # v lies in the rest of the cone
             # print("sides")
             # Rotate x in the direction of v, to make it a side of the cone.
             # Then project v onto that, and calculate the difference.
-            leg_len = sqrt(x_len_sq - r*r)
+            leg_len = sqrt(x_len_sq - r * r)
             # The sign of the sine determines which side to project on.
             sine = copysign(r, det((v, x)))
-            rot = array(
-                ((leg_len, sine),
-                (-sine, leg_len)))
+            rot = array(((leg_len, sine), (-sine, leg_len)))
             rotated_x = rot.dot(x) / x_len_sq
             n = perp(rotated_x)
             if sine < 0:
@@ -186,8 +190,7 @@ def get_avoidance_velocity(agent, collider, t, dt):
         # velocity that will get us out of the collision within the next
         # timestep.
         # print("intersecting")
-        w = v - x/dt
-        u = normalized(w) * r/dt - w
+        w = v - x / dt
+        u = normalized(w) * r / dt - w
         n = normalized(w)
     return u, n
-

@@ -10,17 +10,17 @@ ARG BADGR_OUTPUT_CONTROL_TOPIC=/cmd_vel
 ARG BADGR_OUTPUT_IMAGE_TOPIC=/herdr/output_image
 ARG BADGR_MODEL_NAME=carla23-04-2022--14:57--from09:34.pth
 ARG BADGR_VELOCITY_TOPIC=/herdr/linear_vel_cmd
-ARG BADGR_CONTROL_FREQ=5.
+ARG BADGR_CONTROL_FREQ=15.
 ARG BADGR_SAMPLE_BATCHES=25.
-ARG BADGR_PLANNING_HORIZON=10
+ARG BADGR_PLANNING_HORIZON=4
 ARG BADGR_INITIAL_VELOCITY=1.5
 ARG BADGR_INITIAL_STEERING_ANGLE=0.0
 ARG BADGR_UPDATE_WEIGHTING=20
 ARG BADGR_SAMPLE_VELOCITY_VARIANCE=0.3
-ARG BADGR_SAMPLE_STEERING_VARIANCE=1.5
+ARG BADGR_SAMPLE_STEERING_VARIANCE=1.35
 ARG BADGR_GOAL_GAIN=0.25
 ARG BADGR_ACTION_GAIN=0.2
-ARG BADGR_WHEEL_BASE=0.7
+ARG BADGR_WHEEL_BASE=1.0
 
 # MULTI-STAGE FOR CACHING
 FROM $FROM_IMAGE AS cacher
@@ -81,9 +81,9 @@ RUN apt-get update && apt-get install -q -y --no-install-recommends\
   
 #RUN pip install scikit-learn typing numpy 
 #RUN pip3 install scikit-learn typing numpy 
-RUN pip3 install torch==1.10.0 torchvision==0.10.1 torchaudio==0.10.0
-RUN pip3 install opencv-python-headless matplotlib
+RUN pip3 install torch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0
 RUN pip3 install --upgrade numpy
+RUN pip3 install opencv-python-headless matplotlib
 # RUN pip3 install h5py
 # tensorflow-gpu
 

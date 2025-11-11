@@ -4,19 +4,23 @@ import torch
 
 
 class HERDRPlan:
-    def __init__(self, Horizon=10, vel_init=1.5, steer_init=0, gamma=50, variance=(0.3,1.5)):
+    def __init__(
+        self, Horizon=10, vel_init=1.5, steer_init=0, gamma=50, variance=(0.3, 1.5)
+    ):
         # Set default starting value for actions
         # [Velocity (m/s), Steering angle (rad)]
         self.horizon = Horizon
         self.vel_init = vel_init
         self.steer_init = steer_init
-        self.vel_max = vel_init*1.0
-        vel_mean = vel_init*torch.ones(self.horizon)
-        steer_mean = steer_init*torch.zeros(self.horizon)
+        self.vel_max = vel_init * 1.0
+        vel_mean = vel_init * torch.ones(self.horizon)
+        steer_mean = steer_init * torch.zeros(self.horizon)
         self.mean = torch.stack((vel_mean, steer_mean)).double()
         # set guess for variance
-        vel_cov = variance[0]*torch.ones(self.horizon, 1)
-        steer_cov = variance[1]*torch.ones(self.horizon, 1)  # 0.1*torch.arange(1, self.horizon+1).unsqueeze(1)
+        vel_cov = variance[0] * torch.ones(self.horizon, 1)
+        steer_cov = variance[1] * torch.ones(
+            self.horizon, 1
+        )  # 0.1*torch.arange(1, self.horizon+1).unsqueeze(1)
         self.cov = torch.stack((vel_cov, steer_cov)).transpose(2, 0)
         # Define parameter to adjust for high weight updates
         self.gamma = torch.tensor(gamma)
@@ -33,21 +37,36 @@ class HERDRPlan:
         for i in range(self.horizon):
             if i == 0:
                 # continue
-                temp = self.beta * (self.mean[:, i+1] + noise[:, i, :]) + (1-self.beta) * self.mean[:, i]
-            elif i == (self.horizon-1):
-                action_init = torch.tensor([self.vel_init,self.steer_init])
-                temp = self.beta * (action_init + noise[:, i, :]) + (1 - self.beta) * sequence[-1]
+                temp = (
+                    self.beta * (self.mean[:, i + 1] + noise[:, i, :])
+                    + (1 - self.beta) * self.mean[:, i]
+                )
+            elif i == (self.horizon - 1):
+                action_init = torch.tensor([self.vel_init, self.steer_init])
+                temp = (
+                    self.beta * (action_init + noise[:, i, :])
+                    + (1 - self.beta) * sequence[-1]
+                )
             else:
-                temp = self.beta * (self.mean[:, i+1] + noise[:, i, :]) + (1-self.beta) * sequence[-1]
+                temp = (
+                    self.beta * (self.mean[:, i + 1] + noise[:, i, :])
+                    + (1 - self.beta) * sequence[-1]
+                )
             sequence.append(temp)
         sequence = torch.stack(sequence, dim=1)
 
         # Clamp velocity between [0.1, 1.5*vel_init] m/s
         sequence[:, :, 0] = torch.where(sequence[:, :, 0] < 0.1, 0.1, sequence[:, :, 0])
-        sequence[:, :, 0] = torch.where(sequence[:, :, 0] > self.vel_max, self.vel_max, sequence[:, :, 0])
+        sequence[:, :, 0] = torch.where(
+            sequence[:, :, 0] > self.vel_max, self.vel_max, sequence[:, :, 0]
+        )
         # Clamp angle between [-0.95, 0.95]
-        sequence[:, :, 1] = torch.where(sequence[:, :, 1] < -0.95, -0.95, sequence[:, :, 1])
-        sequence[:, :, 1] = torch.where(sequence[:, :, 1] > 0.95, 0.95, sequence[:, :, 1])
+        sequence[:, :, 1] = torch.where(
+            sequence[:, :, 1] < -0.95, -0.95, sequence[:, :, 1]
+        )
+        sequence[:, :, 1] = torch.where(
+            sequence[:, :, 1] > 0.95, 0.95, sequence[:, :, 1]
+        )
 
         sequence = sequence.float()
         return sequence
@@ -71,14 +90,14 @@ class HERDRPlan:
 
 
 if __name__ == "__main__":
-    device = torch.device('cuda:0')
+    device = torch.device("cuda:0")
     test = HERDRPlan(Horizon=10)
-    samp = test.sample_new(batches=3) #.to(device)
+    samp = test.sample_new(batches=3)  # .to(device)
     # samp1 = test.sample_new()
     # samp = torch.stack((samp, samp1), 0)
     # print(samp.shape)
     # print(torch.randint(0,49,(1,)).item())
-    R = torch.tensor(np.random.rand(3, 10)) #.to(device)
+    R = torch.tensor(np.random.rand(3, 10))  # .to(device)
     # samp = samp.unsqueeze(0)
     # test.gamma = test.gamma.to(device)
     test.update_new(R, samp)
