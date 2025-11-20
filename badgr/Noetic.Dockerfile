@@ -10,10 +10,10 @@ ARG BADGR_OUTPUT_CONTROL_TOPIC=/cmd_vel
 ARG BADGR_OUTPUT_IMAGE_TOPIC=/herdr/output_image
 ARG BADGR_MODEL_NAME=carla23-04-2022--14:57--from09:34.pth
 ARG BADGR_VELOCITY_TOPIC=/herdr/linear_vel_cmd
-ARG BADGR_CONTROL_FREQ=15.
-ARG BADGR_SAMPLE_BATCHES=25.
+ARG BADGR_CONTROL_FREQ=4
+ARG BADGR_SAMPLE_BATCHES=20
 ARG BADGR_PLANNING_HORIZON=4
-ARG BADGR_INITIAL_VELOCITY=1.5
+ARG BADGR_INITIAL_VELOCITY=0.5
 ARG BADGR_INITIAL_STEERING_ANGLE=0.0
 ARG BADGR_UPDATE_WEIGHTING=20
 ARG BADGR_SAMPLE_VELOCITY_VARIANCE=0.3
@@ -70,6 +70,7 @@ RUN apt-get update && apt-get install -q -y --no-install-recommends\
   unzip \
   g++ \
   nano \
+  wget \
   ros-$ROS_DISTRO-vision-msgs \
   ros-$ROS_DISTRO-camera-info-manager \
   ros-$ROS_DISTRO-cv-bridge \
@@ -84,18 +85,6 @@ RUN apt-get update && apt-get install -q -y --no-install-recommends\
 RUN pip3 install torch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0
 RUN pip3 install --upgrade numpy
 RUN pip3 install opencv-python-headless matplotlib
-# RUN pip3 install h5py
-# tensorflow-gpu
-
-# install tensorflow cc
-#RUN apt-get update && apt-get install -q -y --no-install-recommends cmake curl g++-7 git python3-dev python3-numpy sudo wget
-
-
-# RUN curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel.gpg && \
-# mv bazel.gpg /etc/apt/trusted.gpg.d/ && \
-# echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list
-
-#RUN apt-get update && apt-get install -q -y --no-install-recommends bazel bazel-3.7.2
 
 
 ARG ROS_SETUP

@@ -18,10 +18,6 @@
     <arg name='wheel_base' default='$(optenv BADGR_WHEEL_BASE)'/>
     <arg name='model_name' default='$(optenv BADGR_MODEL_NAME)'/>
 
-  <!-- <arg name="node_start_delay" default="1.0" />   -->
-  <!-- launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " -->
-  <!-- <node name="carla_environment" pkg="capra_ros_badgr" type="Carla_Run_Herdr.py" output="screen" /> -->
-
   <node name="herdr_control_policy" pkg="capra_ros_badgr" type="Real_Life_Test.py" output="screen">
     <param name="camera_topic" value="$(arg camera_topic)" unless="$(eval camera_topic == '')"/>
     <param name="control_topic" value="$(arg control_topic)" unless="$(eval control_topic == '')"/>
@@ -45,8 +41,4 @@
     <remap from="input_vel" to="$(arg velocity_topic)"/>
   </node>
 
-
-  
-  <!-- <node name="subscriber" pkg="capra_ros_badgr" type="subscriber.py" output="screen"/> -->
-  <!-- <node name="talker_node" pkg="capra_ros_badgr" type="Publisher.py" output="screen"/> -->
 </launch>

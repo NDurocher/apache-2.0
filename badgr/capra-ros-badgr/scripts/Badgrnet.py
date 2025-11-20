@@ -8,8 +8,19 @@ from PIL import Image
 from torch import nn
 from torchvision import models, transforms
 
-# from torchvision.io import read_image
+import time
+from functools import wraps
 
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__} took {total_time:.4f} seconds to execute.')
+        return result
+    return timeit_wrapper
 
 class HERDR(nn.Module):
     def __init__(self, Horizon=1, RnnDim=64):
@@ -119,6 +130,9 @@ class HERDR_Resnet(HERDR):
         """ Output shape is (Batch, Horizon, 3)) """
         return out
 
+@timeit
+def just_model(model, frame, action):
+    return model(frame, actions)
 
 if __name__ == "__main__":
     from actionplanner import HERDRPlan
@@ -130,8 +144,8 @@ if __name__ == "__main__":
         im = im.repeat(batches, 1, 1, 1)
         return im
 
-    batches = 2
-    hor = 10
+    batches = 20
+    hor = 6
     planner = HERDRPlan(Horizon=hor, steer_init=0.5)
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
@@ -140,8 +154,8 @@ if __name__ == "__main__":
         device = torch.device("cpu")
         # print("Use CPU")
 
-    model = HERDR_Resnet(Horizon=hor, RnnDim=64)
-    # model = torch.load("/home/nathan/HERDR/models/carla07-04-2022--14:41.pth")
+    # model = HERDR_Resnet(Horizon=hor, RnnDim=64)
+    model = torch.load("../models/carla23-04-2022--14:57--from09:34.pth")
     model.model_out = nn.Sequential(model.model_out, nn.Sigmoid())
     model.eval()
     model.to(device)
@@ -164,14 +178,14 @@ if __name__ == "__main__":
     for i in range(0, 1):
         # while True:
         # check, frame = video.read()
-        frame = Image.open("/home/nathan/HERDR/images/2022-02-10 15:22:40.133458.jpg")
+        frame = Image.open("cover_image.png")
         # frame = cv2.imread("/home/nathan/HERDR/images/2022-02-10 15:22:40.133458.jpg")
         frame = preprocess(frame).unsqueeze(0)
         actions = planner.sample_new(batches=batches)
         # print(frame.shape, actions.shape)
         frame, actions = frame.to(device), actions.to(device)
-        r = model(frame, actions)
-        print(r)
+        #r = model(frame, actions)
+        just_model(model,frame,actions)
         # tout = torch.count_nonzero(abs(r[:, :, 0] - t1) < 0.11)
         # print(tout)
         # torch.onnx.export(model,(frame, actions),'Herdr.onnx')

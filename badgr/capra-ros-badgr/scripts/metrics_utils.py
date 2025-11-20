@@ -83,76 +83,72 @@ def plot_actions(position, line_values, location, GOAL, frame=None):
 
 
 def plot_action_cam_view(frame, event_probs, dt, wb, actions, planner_mean=None):
-    fig = plt.figure(figsize=(16, 9), dpi=80)
+    fig = plt.figure(figsize=(4, 3), dpi=80)
     """ state = [batch,horizon,(x,y,z,phi)]
         Transform from global to local co-ords"""
     state = np.zeros((event_probs.shape[0], event_probs.shape[1], 3))
 
-    """ opt_state := [X, Y, phi] """
-    for i in range(0, state.shape[1] - 1):
-        state[:, i + 1, 0] = (
-            state[:, i, 0] + dt * np.cos(state[:, i, 2]) * actions[:, i, 0]
-        )
-        state[:, i + 1, 1] = (
-            state[:, i, 1] + dt * np.sin(state[:, i, 2]) * actions[:, i, 0]
-        )
-        state[:, i + 1, 2] = (
-            state[:, i, 2] - dt * actions[:, i, 1] * actions[:, i, 0] / wb
-        )
+    # """ opt_state := [X, Y, phi] """
+    # for i in range(0, state.shape[1] - 1):
+    #     state[:, i + 1, 0] = (
+    #         state[:, i, 0] + dt * np.cos(state[:, i, 2]) * actions[:, i, 0]
+    #     )
+    #     state[:, i + 1, 1] = (
+    #         state[:, i, 1] + dt * np.sin(state[:, i, 2]) * actions[:, i, 0]
+    #     )
+    #     state[:, i + 1, 2] = (
+    #         state[:, i, 2] - dt * actions[:, i, 1] * actions[:, i, 0] / wb
+    #     )
 
-    """rescale x,y axes to look more 3D"""
-    state[:, :, 1] = state[:, :, 1] / abs(state[:, :, 1]).max() * 1.2
-    state[:, :, 0] = state[:, :, 0] / abs(state[:, :, 0]).max() * 0.8
+    # """rescale x,y axes to look more 3D"""
+    # state[:, :, 1] = state[:, :, 1] / abs(state[:, :, 1]).max() * 1.2
+    # state[:, :, 0] = state[:, :, 0] / abs(state[:, :, 0]).max() * 0.8
 
-    """ Plot multiple coloured line collections of safety score at calculated poisition """
-    points = np.expand_dims(np.array([state[:, :, 1], state[:, :, 0]]).T, 2).transpose(
-        1, 0, 2, 3
-    )
-    segments = np.concatenate([points[:, :-1], points[:, 1:]], axis=2).reshape(
-        [-1, 2, 2]
-    )
-    event_probs = event_probs[:, :-1].flatten().numpy()
-    lc = LineCollection(segments, cmap=plt.get_cmap("YlOrRd"), norm=plt.Normalize(0, 1))
-    lc.set_array(event_probs.T)
-    lc.set_linewidth(1)
-    plt.gca().add_collection(lc)
-    indices = torch.tensor([2, 1, 0])
-    frame = torch.index_select(frame, 2, indices)
-    plt.imshow(frame.int().numpy(), extent=[-1.5, 1.5, 0, 2])
-    plt.autoscale(False)
-    plt.title("Probabilities of Unsafe Position")
-
-    # if type(planner_mean) == type(None):
-    #     return
-    # planner_mean = planner_mean.numpy().T
-    # ''' Display optimal path from planner mean '''
-    # opt_state = np.zeros((planner_mean.shape[0],3))
-    # dt = 1/5
-    # wb = 0.7
-    # ''' opt_state := [X, Y, phi] '''
-    # for i in range(0,len(planner_mean) - 1):
-    #     opt_state[i + 1, 0] = opt_state[i, 0] + dt * np.cos(
-    #         opt_state[i, 2]) * planner_mean[i, 0]
-    #     opt_state[i + 1, 1] = opt_state[i, 1] + dt * np.sin(
-    #         opt_state[i, 2]) * planner_mean[i, 0]
-    #     opt_state[i + 1, 2] = opt_state[i, 2] - dt * planner_mean[i, 1] * planner_mean[i, 0] / wb
-    # opt_state[:, 1] = opt_state[:, 1]/abs(opt_state[:, 1]).max()*1.1
-    # opt_state[:, 0] = opt_state[:, 0]/abs(opt_state[:, 0]).max()*0.7
-    # points = np.expand_dims(np.array([opt_state[:, 1], opt_state[:, 0]]).T, 1)
-    # segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    # lc = LineCollection(segments, cmap=plt.get_cmap('YlGn'), norm=plt.Normalize(0, 1))
-    # lc.set_array(np.ones((10)))
-    # lc.set_linewidth(3)
+    # """ Plot multiple coloured line collections of safety score at calculated poisition """
+    # points = np.expand_dims(np.array([state[:, :, 1], state[:, :, 0]]).T, 2).transpose(
+    #     1, 0, 2, 3
+    # )
+    # segments = np.concatenate([points[:, :-1], points[:, 1:]], axis=2).reshape(
+    #     [-1, 2, 2]
+    # )
+    # event_probs = event_probs[:, :-1].flatten().numpy()
+    # lc = LineCollection(segments, cmap=plt.get_cmap("YlOrRd"), norm=plt.Normalize(0, 1))
+    # lc.set_array(event_probs.T)
+    # lc.set_linewidth(1)
     # plt.gca().add_collection(lc)
+    # indices = torch.tensor([2, 1, 0])
+    # frame = torch.index_select(frame, 2, indices)
+    # plt.imshow(frame.int().numpy(), extent=[-1.5, 1.5, 0, 2])
+    # plt.autoscale(False)
+    # plt.title("Probabilities of Unsafe Position")
+
+    if type(planner_mean) == type(None):
+        return
+    planner_mean = planner_mean.numpy().T
+    ''' Display optimal path from planner mean '''
+    opt_state = np.zeros((planner_mean.shape[0],3))
+    ''' opt_state := [X, Y, phi] '''
+    for i in range(0,len(planner_mean) - 1):
+        opt_state[i + 1, 0] = opt_state[i, 0] + dt * np.cos(
+            opt_state[i, 2]) * planner_mean[i, 0]
+        opt_state[i + 1, 1] = opt_state[i, 1] + dt * np.sin(
+            opt_state[i, 2]) * planner_mean[i, 0]
+        opt_state[i + 1, 2] = opt_state[i, 2] - dt * planner_mean[i, 1] * planner_mean[i, 0] / wb
+    opt_state[:, 1] = opt_state[:, 1]/abs(opt_state[:, 1]).max()*1.1
+    opt_state[:, 0] = opt_state[:, 0]/abs(opt_state[:, 0]).max()*0.7
+    points = np.expand_dims(np.array([opt_state[:, 1], opt_state[:, 0]]).T, 1)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    lc = LineCollection(segments, cmap=plt.get_cmap('YlGn'), norm=plt.Normalize(0, 1))
+    lc.set_array(np.ones((10)))
+    lc.set_linewidth(3)
+    plt.gca().add_collection(lc)
 
     fig.canvas.draw()
     # Now we can save it to a numpy array.
     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
     # data shape above [width, height, 3]
-    data = data.transpose(2, 0, 1)
-    # data shape above [3, width, height]
-    # data = np.zeros((3,480,640))
+    # data = data.transpose(2, 0, 1)
     plt.close(fig)
     return data.astype(np.uint8)
 
