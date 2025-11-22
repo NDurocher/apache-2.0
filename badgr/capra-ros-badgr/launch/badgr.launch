@@ -18,7 +18,7 @@
     <arg name='wheel_base' default='$(optenv BADGR_WHEEL_BASE)'/>
     <arg name='model_name' default='$(optenv BADGR_MODEL_NAME)'/>
 
-  <node name="herdr_control_policy" pkg="capra_ros_badgr" type="Real_Life_Test.py" output="screen">
+  <node name="herdr_control_policy" pkg="capra_ros_badgr" type="Real_Life_tensorRT.py" output="screen">
     <param name="camera_topic" value="$(arg camera_topic)" unless="$(eval camera_topic == '')"/>
     <param name="control_topic" value="$(arg control_topic)" unless="$(eval control_topic == '')"/>
     <param name="output_image_topic" value="$(arg output_image_topic)" unless="$(eval output_image_topic == '')"/>

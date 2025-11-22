@@ -80,13 +80,8 @@ class HERDR(nn.Module):
         """ Change obs to 2*rnndim encoding, this is then split into Hx and Cx """
         obs = self.init_hidden(obs)
         Hx, Cx = torch.chunk(obs, 2, dim=1)
-        # print(Hx.shape(), Cx.shape())
-        if obs.shape[0] == 1:
-            Cx = Cx.repeat(1, action.shape[0], 1)
-            Hx = Hx.repeat(1, action.shape[0], 1)
-        else:
-            Hx = Hx.repeat(1, 1, 1)
-            Cx = Cx.repeat(1, 1, 1)
+        Cx = Cx.repeat(1, action.shape[0], 1)
+        Hx = Hx.repeat(1, action.shape[0], 1)
         action = self.action_pre(action)
         action = action.transpose(1, 0)  # put "time" first
         out, (_, _) = self.lstm(action, (Hx, Cx))

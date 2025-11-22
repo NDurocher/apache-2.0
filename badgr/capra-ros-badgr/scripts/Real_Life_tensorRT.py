@@ -65,7 +65,7 @@ def img_callback(img_msg, Control_Policy):
     #img = img[:, :, :3]
 
     img = ros_image_to_tensor(img_msg)
-    print(f"Input tensor shape: {img.shape}, expected: (3, 640, 480)")
+    #print(f"Input tensor shape: {img.shape}, expected: (3, 640, 480)")
     # Image assumed to be bgr
     #indices = torch.tensor([2, 1, 0])
     #img = torch.index_select(img, 2, indices)
@@ -172,15 +172,15 @@ class HerdrAgent(object):
     @timeit
     def Call_Model(self):
         # Convert image tensor torch(C,H,W) -> np(1,C,H,W)
-        img_np = self.frame.cpu().numpy().astype(np.float32)[None, :, :, :]
+        img_np = np.ascontiguousarray(self.frame.cpu().contiguous().numpy())
 
         # Convert actions torch(B,H,2) -> np(B,H,2)
-        actions_np = self.actions.cpu().numpy().astype(np.float32)
+        actions_np = np.ascontiguousarray(self.actions.cpu().contiguous().numpy())
 
         # Run TensorRT engine
         out = self.model(img_np, actions_np)   # shape (B, H, 1)
 
-        self.event = out[:, :, 0]  # remove final dim
+        self.event = out[:, :, 0] # remove final dim
 
         # Compute MPC score (still in torch domain if you want)
         action_cost = (
